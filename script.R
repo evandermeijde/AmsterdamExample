@@ -64,8 +64,140 @@ iww <- select(dataAms, gebiedcode15, jaar, iww, bevtotaal) %>% arrange(gebiedcod
 
 unique(iww$gebiedcode15)
 
-filter(iww, gebiedcode15 != "STAD", gebiedcode15 != "A", gebiedcode15 != "E", 
+test <- filter(iww, gebiedcode15 != "STAD", gebiedcode15 != "A", gebiedcode15 != "E", 
        gebiedcode15 != "T", gebiedcode15 != "K", gebiedcode15 != "M", gebiedcode15 != "N", 
-       gebiedcode15 != "Z", gebiedcode15 != "F", gebiedcode15 != "D")
+       gebiedcode15 != "Z", gebiedcode15 != "F", gebiedcode15 != "D") %>%
+  arrange(gebiedcode15)
 
-dataAms$geb
+
+test <- subset(dataAms, nchar(as.character(gebiedcode15)) == 3)
+
+dataAms <- test
+
+correlaties <- cor( na.omit( select(dataAms, uitkomstvariabele, onafhankelijkevar1, onafhankelijkevar2, onafhankelijkevar3, )))
+install.packages("VennDiagram")
+library(VennDiagram)
+
+mean1 <- mean(dataAms$beveenouderhh_p, na.rm = TRUE)
+dataAms$beveenouderhh_bovengemiddeld <- ifelse(dataAms$beveenouderhh_p>mean1, 1, 0)
+
+set1 <- filter(dataAms, beveenouderhh_bovengemiddeld>0)$gebiedcode15
+set1
+
+mean2 <- mean(dataAms$bevsur_p, na.rm = TRUE)
+dataAms$bevsur_bovengemiddeld <- ifelse(dataAms$bevsur_p>mean2, 1, 0)
+
+set2 <- filter(dataAms, bevsur_bovengemiddeld>0)$gebiedcode15
+set2
+
+mean3 <- mean(dataAms$bevopllaag_p, na.rm = TRUE)
+dataAms$bevopllaag_bovengemiddeld <- ifelse(dataAms$bevopllaag_p>mean3, 1, 0)
+set3 <- filter(dataAms, bevopllaag_bovengemiddeld>0)$gebiedcode15
+set3
+
+venn.diagram(
+  x = list(set1, set2, set3),
+  category.names = c("1-oudergez." , "afkomst Suri", "laagopgeleid"),
+  filename = '#Bovengemiddeld.png',
+  output=TRUE
+)
+
+
+dataStad <- pivot_wider(raw,names_from = variabele,values_from = waarde) %>%
+  filter(gebiedcode15=="STAD") %>%
+  filter(!is.na(jaar)) %>%
+  filter(!is.na(BEVEENOUDERHH)) %>%
+  filter(jaar<2021)
+
+ggplot(dataStad, aes(x=as.factor(jaar))) +
+  geom_point(aes(y=as.numeric(BEVEENOUDERHH))) +
+  geom_boxplot()
+
+?geom_point
+
+dataAms$wkoop_p
+
+# No legend, since the information is redundant
+ggplot(data=dataStad, aes(x=as.factor(jaar), y=as.numeric(BEVEENOUDERHH))) +
+  geom_bar(colour="black", stat="identity") +
+  guides(fill=FALSE)
+
+fit <- lm(log(beveenouderhh_p+1) ~  
+            bevman_p + bevvrouw_p + 
+            bevsur_p + bevantil_p + bevmarok_p + bevturk_p + bevovnw_p + 
+            wcorhuur_p + wparthuur_p + wkoop_p + bevpotbbv15_64_p +
+            bevopllaag_p + bevoplmid_p + bevoplhoog_p, 
+          data = 
+            filter(dataAms, gebiedcode15 != "STAD", gebiedcode15 != "A", gebiedcode15 != "E", 
+                   gebiedcode15 != "T", gebiedcode15 != "K", gebiedcode15 != "M", gebiedcode15 != "N", 
+                   gebiedcode15 != "Z", gebiedcode15 != "F", gebiedcode15 != "D", jaar<2021, jaar>2009) %>%
+            arrange(gebiedcode15)
+          
+            )
+summary(fit)
+
+test <-
+  filter(dataAms, gebiedcode15 != "STAD", gebiedcode15 != "A", gebiedcode15 != "E", 
+         gebiedcode15 != "T", gebiedcode15 != "K", gebiedcode15 != "M", gebiedcode15 != "N", 
+         gebiedcode15 != "Z", gebiedcode15 != "F", gebiedcode15 != "D", jaar<2021, jaar>2009) %>%
+  arrange(gebiedcode15)
+
+fit$transterug <- exp(fit$coefficients)-1
+fit$transterug
+
+voorspel1 <- fit$transterug[[1]] + 51* fit$transterug[[2]] + 49 * fit$transterug[[3]] + 1 * fit$transterug[[4]] + 
+  20 * fit$transterug[[5]] + 1 * fit$transterug[[6]] + 1 * fit$transterug[[7]] + 1 * fit$transterug[[8]] + 
+  1 * fit$transterug[[9]] + 1 * fit$transterug[[10]] + 1 * fit$transterug[[11]] +
+  1 * fit$transterug[[12]] + 1 * fit$transterug[[13]] + 1 * fit$transterug[[14]] + 
+  1 * fit$transterug[[15]]
+
+intercept <- fit$transterug[[1]] 
+coef_man <- fit$transterug[[2]] 
++ 49 * fit$transterug[[3]] + 1 * fit$transterug[[4]] + 
+  20 * fit$transterug[[5]] + 1 * fit$transterug[[6]] + 1 * fit$transterug[[7]] + 1 * fit$transterug[[8]] + 
+  1 * fit$transterug[[9]] + 1 * fit$transterug[[10]] + 1 * fit$transterug[[11]] +
+  1 * fit$transterug[[12]] + 1 * fit$transterug[[13]] + 1 * fit$transterug[[14]] + 
+  1 * fit$transterug[[15]]
+
+raw$variabele=="BEVEENOUDERHH_P"
+
+ggplot(dataAms,aes(y=beveenouderhh_p,x=bevsur_p))+
+  geom_point(aes(color=gebiedcode15))+
+  geom_smooth(method="lm")
+
+ggplot(dataAms,aes(y=beveenouderhh_p,x=bevoplhoog_p))+
+  geom_point(aes(color=gebiedcode15))+
+  geom_smooth(method="lm")
+
+ggplot(dataAms,aes(y=beveenouderhh_p,x=wkoop_p))+
+  geom_point(aes(color=gebiedcode15))+
+  geom_smooth(method="lm")
+
+ggplot(dataAms,aes(y=beveenouderhh_p,x=wparthuur_p))+
+  geom_point(aes(color=gebiedcode15))+
+  geom_smooth(method="lm")
+
+ggplot(dataAms,aes(y=beveenouderhh_p,x=wcorhuur_p))+
+  geom_point(aes(color=gebiedcode15))+
+  geom_smooth(method="lm")
+
+test$gebiedcode15
+filter(dataAms, gebiedcode15=="1015")       
+
+dataAms <- pivot_wider(raw,names_from = variabele,values_from = waarde)
+dataAms$gebiedcode15 <- as.numeric(dataAms$gebiedcode15)
+dataMinZO <- filter(dataAms, gebiedcode15<1100)  
+
+dataMinZO <- janitor::clean_names(dataMinZO)
+
+dataMinZO[3:ncol(dataMinZO)] <- sapply(dataMinZO[3:ncol(dataMinZO)],as.numeric)
+
+dataMinZO$trans <- log(dataMinZO$beveenouderhh_p+1)
+
+fitMinZO <- lm(trans ~  
+                 bevman_p + bevvrouw_p + 
+                 bevsur_p + bevantil_p + bevmarok_p + bevturk_p + bevovnw_p + 
+                 wcorhuur_p + wparthuur_p + wkoop_p + bevpotbbv15_64_p, 
+               data = dataMinZO )
+
+summary(fitMinZO)
